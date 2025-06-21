@@ -2,6 +2,8 @@ export enum ErrorCode {
  //#region Application
   VALIDATION = 'VALIDATION',
   EMAIL_ALREADY_IN_USE = 'EMAIL_ALREADY_IN_USE',
+  INVALID_REFRESH_TOKEN = 'INVALID_REFRESH_TOKEN',
+  INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
  //#endregion
 
   //#region Http

@@ -1,4 +1,5 @@
-import { GetTokensFromRefreshTokenCommand, InitiateAuthCommand, SignUpCommand } from '@aws-sdk/client-cognito-identity-provider';
+import { InvalidRefreshTokenError } from '@application/errors/application/InvalidRefreshTokenError';
+import { ConfirmForgotPasswordCommand, ForgotPasswordCommand, GetTokensFromRefreshTokenCommand, InitiateAuthCommand, RefreshTokenReuseException, SignUpCommand } from '@aws-sdk/client-cognito-identity-provider';
 import { cognitoClient } from '@infra/clients/cognitoClient';
 import { Injectable } from '@kernel/decorators/Injectable';
 import { AppConfig } from '@shared/config/AppConfig';
@@ -54,23 +55,53 @@ export class AuthGateway {
   }
 
   async refreshToken({ refreshToken }: AuthGateway.RefreshTokenParams): Promise<AuthGateway.RefreshTokenResult> {
-    const command = new GetTokensFromRefreshTokenCommand({
-      ClientId: this.appConfig.auth.cognito.client.id,
-      RefreshToken: refreshToken,
-      ClientSecret: this.appConfig.auth.cognito.client.secret,
-    });
+    try {
+      const command = new GetTokensFromRefreshTokenCommand({
+        ClientId: this.appConfig.auth.cognito.client.id,
+        RefreshToken: refreshToken,
+        ClientSecret: this.appConfig.auth.cognito.client.secret,
+      });
 
-    const { AuthenticationResult } = await cognitoClient.send(command);
+      const { AuthenticationResult } = await cognitoClient.send(command);
 
-    if(!AuthenticationResult?.AccessToken || !AuthenticationResult.RefreshToken) {
-      throw new Error('Cannot refresh token');
+      if(!AuthenticationResult?.AccessToken || !AuthenticationResult.RefreshToken) {
+        throw new Error('Cannot refresh token');
+      }
+
+      return {
+        accessToken: AuthenticationResult.AccessToken,
+        refreshToken: AuthenticationResult.RefreshToken,
+      };
+    } catch (error) {
+      if (error instanceof RefreshTokenReuseException) {
+       throw new InvalidRefreshTokenError();
+      }
+
+      throw error;
     }
 
-    return {
-      accessToken: AuthenticationResult.AccessToken,
-      refreshToken: AuthenticationResult.RefreshToken,
-    };
+  }
 
+  async forgotPassword({ email }: AuthGateway.ForgotPasswordParams): Promise<void> {
+    const command = new ForgotPasswordCommand({
+      ClientId: this.appConfig.auth.cognito.client.id,
+      Username: email,
+      SecretHash: this.getSecretHash(email),
+    });
+
+    await cognitoClient.send(command);
+  }
+
+  async confirmForgotPassword({ email, confirmationCode, password }: AuthGateway.confirmForgotPasswordParams): Promise<void> {
+    const command = new ConfirmForgotPasswordCommand({
+      ClientId: this.appConfig.auth.cognito.client.id,
+      ConfirmationCode: confirmationCode,
+      Password: password,
+      Username: email,
+      SecretHash: this.getSecretHash(email),
+    });
+
+    await cognitoClient.send(command);
   }
 
   /**
@@ -114,6 +145,16 @@ export namespace AuthGateway {
   export type RefreshTokenResult = {
     accessToken: string
     refreshToken: string
+  }
+
+  export type ForgotPasswordParams = {
+    email: string
+  }
+
+  export type confirmForgotPasswordParams = {
+    email: string
+    confirmationCode: string
+    password: string
   }
 
 }
