@@ -13,7 +13,7 @@ import { ZodError } from 'zod';
 
 type Event = APIGatewayProxyEventV2 | APIGatewayProxyEventV2WithJWTAuthorizer
 
-export function lambdaHttpAdapter(controller: Controller<unknown>) {
+export function lambdaHttpAdapter(controller: Controller<any, unknown>) {
   return async (
     event: Event,
   ): Promise<APIGatewayProxyResultV2> => {
@@ -22,16 +22,13 @@ export function lambdaHttpAdapter(controller: Controller<unknown>) {
       const queryParams = event.queryStringParameters ?? {};
       const body = lambdaBodyParser(event.body);
 
-      if('authorizer' in event.requestContext) {
-       console.log(JSON.stringify({
-        internalId: event.requestContext.authorizer.jwt.claims.internalId,
-       }));
-      }
+      const accountId = ('authorizer' in event.requestContext ? event.requestContext.authorizer.jwt.claims.internalId as string : null);
 
       const response = await controller.execute({
         body,
         params,
         queryParams,
+        accountId,
       });
 
       return {
