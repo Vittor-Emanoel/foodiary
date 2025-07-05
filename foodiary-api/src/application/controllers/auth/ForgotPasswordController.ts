@@ -12,10 +12,14 @@ export class ForgotPasswordController extends Controller<'public', ForgotPasswor
   }
 
   protected override async handle({ body }: Controller.Request<'public', ForgotPasswordBody>): Promise<Controller.Response<ForgotPasswordController.Response>> {
-    const { email } = body;
+    try {
+      const { email } = body;
 
      await this.forgotPasswordUseCase.execute({ email });
 
+    } catch {
+     //
+    }
     return {
       statusCode: 204,
     };
