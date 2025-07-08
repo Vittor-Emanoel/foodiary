@@ -11,6 +11,7 @@ provider:
   iam:
     role: ${file(./sls/config/role.yml)}
   httpApi:
+    disableDefaultEndpoint: ${env:DISABLE_DEFAULT_APIGW_ENDPOINT, ""}
     authorizers:
       CognitoAuthorizer:
         type: jwt
