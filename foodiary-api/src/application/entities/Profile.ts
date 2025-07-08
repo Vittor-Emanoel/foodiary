@@ -2,11 +2,17 @@ import KSUID from 'ksuid';
 
 export class Profile {
   readonly accountId: string;
+
   name: string;
+
   birthDate: Date;
+
   gender: Profile.Gender;
+
   height: number;
+
   activityLevel: Profile.ActivityLevel;
+
   weight: number;
 
   readonly createdAt: Date;
