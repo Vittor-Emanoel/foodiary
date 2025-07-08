@@ -1,4 +1,5 @@
 import { Account } from '@application/entities/Account';
+import { Profile } from '@application/entities/Profile';
 import { EmailAlreadyInUseError } from '@application/errors/application/EmailAlreadyInUse';
 import { AccountRepository } from '@infra/database/dynamo/repositories/AccountRepository';
 import { AuthGateway } from '@infra/gateways/AuthGateway';
@@ -11,7 +12,10 @@ export class SignupUseCase {
     private readonly accountRepository: AccountRepository,
   ) {}
 
-  async execute({ email, password }: SignupUseCase.Input): Promise<SignupUseCase.Output> {
+  async execute({
+    account: { email, password },
+    profile,
+  }: SignupUseCase.Input): Promise<SignupUseCase.Output> {
     const emailAlreadyInUse = await this.accountRepository.findByEmail(email);
 
     if (emailAlreadyInUse) {
@@ -26,7 +30,7 @@ export class SignupUseCase {
       internalId: account.id,
     });
 
-    account.externalId =  externalId;
+    account.externalId = externalId;
 
     await this.accountRepository.create(account);
 
@@ -44,12 +48,22 @@ export class SignupUseCase {
 
 export namespace SignupUseCase {
   export type Input = {
-    email: string;
-    password: string;
+    account: {
+      email: string;
+      password: string;
+    };
+    profile: {
+      name: string;
+      birthDate: Date;
+      gender: Profile.Gender;
+      height: number;
+      activityLevel: Profile.ActivityLevel;
+      weight: number;
+    };
   };
 
   export type Output = {
-    accessToken: string
-    refreshToken: string
+    accessToken: string;
+    refreshToken: string;
   };
 }
