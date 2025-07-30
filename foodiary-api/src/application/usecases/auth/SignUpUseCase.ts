@@ -1,7 +1,9 @@
 import { Account } from '@application/entities/Account';
+import { Goal } from '@application/entities/Goal';
 import { Profile } from '@application/entities/Profile';
 import { EmailAlreadyInUseError } from '@application/errors/application/EmailAlreadyInUse';
 import { AccountRepository } from '@infra/database/dynamo/repositories/AccountRepository';
+import { SignUpUnitOfWork } from '@infra/database/dynamo/uow/SignUpUnitOfWork';
 import { AuthGateway } from '@infra/gateways/AuthGateway';
 import { Injectable } from '@kernel/decorators/Injectable';
 
@@ -10,11 +12,12 @@ export class SignupUseCase {
   constructor(
     private readonly authGateway: AuthGateway,
     private readonly accountRepository: AccountRepository,
+    private readonly signUpUow: SignUpUnitOfWork,
   ) {}
 
   async execute({
     account: { email, password },
-    profile,
+    profile: ProfileInfo,
   }: SignupUseCase.Input): Promise<SignupUseCase.Output> {
     const emailAlreadyInUse = await this.accountRepository.findByEmail(email);
 
@@ -23,6 +26,18 @@ export class SignupUseCase {
     }
 
     const account = new Account({ email });
+    const profile = new Profile({
+      ...ProfileInfo,
+      accountId: account.id,
+    });
+
+    const goal = new Goal({
+      accountId: account.id,
+      calories: 2500,
+      proteins: 180,
+      fats: 80,
+      carbohydrates: 500,
+    });
 
     const { externalId } = await this.authGateway.signUp({
       email,
@@ -32,7 +47,11 @@ export class SignupUseCase {
 
     account.externalId = externalId;
 
-    await this.accountRepository.create(account);
+    await this.signUpUow.run({
+      account,
+      goal,
+      profile,
+    });
 
     const { accessToken, refreshToken } = await this.authGateway.signIn({
       email,
