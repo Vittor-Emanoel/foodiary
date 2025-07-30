@@ -5,7 +5,7 @@ export abstract class UnitOfWork {
   private transactItems: NonNullable<TransactWriteCommandInput['TransactItems']> = [];
 
   protected addPut(putInput: PutCommandInput) {
-    this.transactItems.push(putInput);
+    this.transactItems.push({ Put: putInput });
   }
 
   protected async commit() {
