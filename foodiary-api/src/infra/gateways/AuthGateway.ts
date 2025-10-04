@@ -1,5 +1,13 @@
 import { InvalidRefreshTokenError } from '@application/errors/application/InvalidRefreshTokenError';
-import { ConfirmForgotPasswordCommand, ForgotPasswordCommand, GetTokensFromRefreshTokenCommand, InitiateAuthCommand, RefreshTokenReuseException, SignUpCommand } from '@aws-sdk/client-cognito-identity-provider';
+import {
+  AdminDeleteUserCommand,
+  ConfirmForgotPasswordCommand,
+  ForgotPasswordCommand,
+  GetTokensFromRefreshTokenCommand,
+  InitiateAuthCommand,
+  RefreshTokenReuseException,
+  SignUpCommand,
+} from '@aws-sdk/client-cognito-identity-provider';
 import { cognitoClient } from '@infra/clients/cognitoClient';
 import { Injectable } from '@kernel/decorators/Injectable';
 import { AppConfig } from '@shared/config/AppConfig';
@@ -7,9 +15,12 @@ import { createHmac } from 'node:crypto';
 
 @Injectable()
 export class AuthGateway {
-  constructor(private readonly appConfig: AppConfig) {}
+  constructor(private readonly appConfig: AppConfig) { }
 
-  async signIn({ email, password }: AuthGateway.SignInParams): Promise<AuthGateway.SignInResult> {
+  async signIn({
+    email,
+    password,
+  }: AuthGateway.SignInParams): Promise<AuthGateway.SignInResult> {
     const command = new InitiateAuthCommand({
       AuthFlow: 'USER_PASSWORD_AUTH',
       ClientId: this.appConfig.auth.cognito.client.id,
@@ -22,7 +33,10 @@ export class AuthGateway {
 
     const { AuthenticationResult } = await cognitoClient.send(command);
 
-    if(!AuthenticationResult?.AccessToken || !AuthenticationResult.RefreshToken) {
+    if (
+      !AuthenticationResult?.AccessToken ||
+      !AuthenticationResult.RefreshToken
+    ) {
       throw new Error(`Cannot authenticate user ${email}`);
     }
 
@@ -32,20 +46,22 @@ export class AuthGateway {
     };
   }
 
-  async signUp({ email, password, internalId }: AuthGateway.SignUpParams): Promise<AuthGateway.SignUpResult> {
+  async signUp({
+    email,
+    password,
+    internalId,
+  }: AuthGateway.SignUpParams): Promise<AuthGateway.SignUpResult> {
     const command = new SignUpCommand({
       ClientId: this.appConfig.auth.cognito.client.id,
       Username: email,
       Password: password,
-      UserAttributes: [
-        { Name: 'custom:internalId', Value: internalId },
-      ],
+      UserAttributes: [{ Name: 'custom:internalId', Value: internalId }],
       SecretHash: this.getSecretHash(email),
     });
 
     const { UserSub: externalId } = await cognitoClient.send(command);
 
-    if(!externalId) {
+    if (!externalId) {
       throw new Error(`Cannot signup user ${email}`);
     }
 
@@ -54,7 +70,9 @@ export class AuthGateway {
     };
   }
 
-  async refreshToken({ refreshToken }: AuthGateway.RefreshTokenParams): Promise<AuthGateway.RefreshTokenResult> {
+  async refreshToken({
+    refreshToken,
+  }: AuthGateway.RefreshTokenParams): Promise<AuthGateway.RefreshTokenResult> {
     try {
       const command = new GetTokensFromRefreshTokenCommand({
         ClientId: this.appConfig.auth.cognito.client.id,
@@ -64,7 +82,10 @@ export class AuthGateway {
 
       const { AuthenticationResult } = await cognitoClient.send(command);
 
-      if(!AuthenticationResult?.AccessToken || !AuthenticationResult.RefreshToken) {
+      if (
+        !AuthenticationResult?.AccessToken ||
+        !AuthenticationResult.RefreshToken
+      ) {
         throw new Error('Cannot refresh token');
       }
 
@@ -74,15 +95,16 @@ export class AuthGateway {
       };
     } catch (error) {
       if (error instanceof RefreshTokenReuseException) {
-       throw new InvalidRefreshTokenError();
+        throw new InvalidRefreshTokenError();
       }
 
       throw error;
     }
-
   }
 
-  async forgotPassword({ email }: AuthGateway.ForgotPasswordParams): Promise<void> {
+  async forgotPassword({
+    email,
+  }: AuthGateway.ForgotPasswordParams): Promise<void> {
     const command = new ForgotPasswordCommand({
       ClientId: this.appConfig.auth.cognito.client.id,
       Username: email,
@@ -92,7 +114,11 @@ export class AuthGateway {
     await cognitoClient.send(command);
   }
 
-  async confirmForgotPassword({ email, confirmationCode, password }: AuthGateway.confirmForgotPasswordParams): Promise<void> {
+  async confirmForgotPassword({
+    email,
+    confirmationCode,
+    password,
+  }: AuthGateway.confirmForgotPasswordParams): Promise<void> {
     const command = new ConfirmForgotPasswordCommand({
       ClientId: this.appConfig.auth.cognito.client.id,
       ConfirmationCode: confirmationCode,
@@ -104,57 +130,67 @@ export class AuthGateway {
     await cognitoClient.send(command);
   }
 
+  async deleteUser({ externalId }: AuthGateway.DeleteUserParams) {
+    const command = new AdminDeleteUserCommand({
+      UserPoolId: this.appConfig.auth.cognito.pool.id,
+      Username: externalId,
+    });
+
+    await cognitoClient.send(command);
+  }
   /**
    *  Metodo criado para pegar a secretKey do cognito e gerar a secretHash
    */
   private getSecretHash(email: string) {
-    const { id, secret } =  this.appConfig.auth.cognito.client;
+    const { id, secret } = this.appConfig.auth.cognito.client;
 
     return createHmac('SHA256', secret)
-    .update(`${email}${id}`)
-    .digest('base64');
+      .update(`${email}${id}`)
+      .digest('base64');
   }
-
 }
 
 export namespace AuthGateway {
   export type SignUpParams = {
-    email: string
-    password: string
-    internalId: string
-  }
+    email: string;
+    password: string;
+    internalId: string;
+  };
 
   export type SignUpResult = {
-    externalId: string
-  }
+    externalId: string;
+  };
 
   export type SignInParams = {
-    email: string
-    password: string
-  }
+    email: string;
+    password: string;
+  };
 
   export type SignInResult = {
-    accessToken: string
-    refreshToken: string
-  }
+    accessToken: string;
+    refreshToken: string;
+  };
 
   export type RefreshTokenParams = {
-    refreshToken: string
-  }
+    refreshToken: string;
+  };
 
   export type RefreshTokenResult = {
-    accessToken: string
-    refreshToken: string
-  }
+    accessToken: string;
+    refreshToken: string;
+  };
 
   export type ForgotPasswordParams = {
-    email: string
-  }
+    email: string;
+  };
 
   export type confirmForgotPasswordParams = {
-    email: string
-    confirmationCode: string
-    password: string
-  }
+    email: string;
+    confirmationCode: string;
+    password: string;
+  };
 
+  export type DeleteUserParams = {
+    externalId: string;
+  };
 }
