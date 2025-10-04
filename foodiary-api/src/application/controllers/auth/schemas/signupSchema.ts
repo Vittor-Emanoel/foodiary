@@ -16,6 +16,7 @@ export const signUpSchema = z.object({
     height: z.number(),
     weight: z.number(),
     activityLevel: z.nativeEnum(Profile.ActivityLevel),
+    goal: z.nativeEnum(Profile.Goal),
   }),
 });
 

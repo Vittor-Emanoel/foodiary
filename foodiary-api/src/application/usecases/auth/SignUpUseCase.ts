@@ -2,6 +2,7 @@ import { Account } from '@application/entities/Account';
 import { Goal } from '@application/entities/Goal';
 import { Profile } from '@application/entities/Profile';
 import { EmailAlreadyInUseError } from '@application/errors/application/EmailAlreadyInUse';
+import { GoalCalculator } from '@application/services/GoalCalculator';
 import { AccountRepository } from '@infra/database/dynamo/repositories/AccountRepository';
 import { SignUpUnitOfWork } from '@infra/database/dynamo/uow/SignUpUnitOfWork';
 import { AuthGateway } from '@infra/gateways/AuthGateway';
@@ -34,12 +35,14 @@ export class SignupUseCase {
         accountId: account.id,
       });
 
+      const { carbohydrates, calories, fats, proteins } = GoalCalculator.calculate(profile);
+
       const goal = new Goal({
         accountId: account.id,
-        calories: 2500,
-        proteins: 180,
-        fats: 80,
-        carbohydrates: 500,
+        carbohydrates,
+        calories,
+        fats,
+        proteins,
       });
 
       const { externalId } = await this.authGateway.signUp({
@@ -83,6 +86,7 @@ export namespace SignupUseCase {
       gender: Profile.Gender;
       height: number;
       activityLevel: Profile.ActivityLevel;
+      goal: Profile.Goal
       weight: number;
     };
   };
