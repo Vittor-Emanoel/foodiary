@@ -1,10 +1,11 @@
 export enum ErrorCode {
- //#region Application
+  //#region Application
   VALIDATION = 'VALIDATION',
   EMAIL_ALREADY_IN_USE = 'EMAIL_ALREADY_IN_USE',
   INVALID_REFRESH_TOKEN = 'INVALID_REFRESH_TOKEN',
   INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
- //#endregion
+  RESOURCE_NOT_FOUND = 'RESOURCE_NOT_FOUND',
+  //#endregion
 
   //#region Http
   INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
