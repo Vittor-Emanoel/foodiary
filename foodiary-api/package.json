@@ -25,7 +25,9 @@
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.826.0",
     "@aws-sdk/client-dynamodb": "^3.826.0",
+    "@aws-sdk/client-s3": "^3.932.0",
     "@aws-sdk/lib-dynamodb": "^3.826.0",
+    "@aws-sdk/s3-presigned-post": "^3.932.0",
     "@react-email/column": "^0.0.13",
     "@react-email/heading": "^0.0.15",
     "@react-email/html": "^0.0.11",
