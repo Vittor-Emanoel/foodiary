@@ -1,3 +1,3 @@
-import { CognitoIdentityProviderClient } from '@aws-sdk/client-cognito-identity-provider';
+import { S3Client } from "@aws-sdk/client-s3";
 
-export const s3Client = new CognitoIdentityProviderClient();
+export const s3Client = new S3Client();
