@@ -1,7 +1,7 @@
-import { Meal } from "@application/entities/Meal";
-import { MealRepository } from "@infra/database/dynamo/repositories/MealRepository";
-import { MealsFileStorageGateway } from "@infra/gateways/MealsFIleStorageGateway";
-import { Injectable } from "@kernel/decorators/Injectable";
+import { Meal } from '@application/entities/Meal';
+import { MealRepository } from '@infra/database/dynamo/repositories/MealRepository';
+import { MealsFileStorageGateway } from '@infra/gateways/MealsFIleStorageGateway';
+import { Injectable } from '@kernel/decorators/Injectable';
 
 @Injectable()
 export class CreateMealUseCase {
@@ -21,20 +21,21 @@ export class CreateMealUseCase {
 
     const meal = new Meal({
       accountId,
-      inputFileKey: inputFileKey,
       inputType: file.inputType,
       status: Meal.Status.UPLOADING,
+      inputFileKey,
     });
 
     const [, { uploadSignature }] = await Promise.all([
       this.mealRepository.create(meal),
-      this.mealsFileStorageGateway.createPost({
+      this.mealsFileStorageGateway.createPOST({
+        mealId: meal.id,
+        accountId,
         file: {
           key: inputFileKey,
           size: file.size,
           inputType: file.inputType,
         },
-        mealId: meal.id,
       }),
     ]);
 

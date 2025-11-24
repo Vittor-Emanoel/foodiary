@@ -18,7 +18,9 @@ export class MealRepository {
     };
   }
 
-  async create(meal: Meal): Promise<void> {
-    await dynamoClient.send(new PutCommand(this.getPutCommandInput(meal)));
+ async create(meal: Meal): Promise<void> {
+    await dynamoClient.send(
+      new PutCommand(this.getPutCommandInput(meal)),
+    );
   }
 }

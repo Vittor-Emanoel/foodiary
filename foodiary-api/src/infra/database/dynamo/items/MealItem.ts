@@ -9,7 +9,7 @@ export class MealItem {
     this.keys = {
       PK: MealItem.getPK(this.attrs.id),
       SK: MealItem.getSK(this.attrs.id),
-      GSI1PK: MealItem.getSGI1PK({
+      GSI1PK: MealItem.getGSI1PK({
         accountId: this.attrs.accountId,
         createdAt: new Date(this.attrs.createdAt),
       }),
@@ -55,7 +55,7 @@ export class MealItem {
     return `MEAL#${mealId}`;
   }
 
-  static getSGI1PK({
+  static getGSI1PK({
     accountId,
     createdAt,
   }: MealItem.GSI1PKParams): MealItem.Keys['GSI1PK'] {
